@@ -1,197 +1,197 @@
 <!doctype html>
 <html>
-	<head>
-	</head>
+    <head>
+    </head>
 
-	<body>
-		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
+    <body>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
 
-		<script type="text/javascript">	
-			function format_currency(f) {
-				return '$' + f.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-			}
+        <script type="text/javascript"> 
+            function format_currency(f) {
+                return '$' + f.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            }
 
-			function init_expenses(expenses) {
-				for (var i = 0; i < expenses.length; ++i) {
-					for (var x = 0; x < expenses[i].length; ++x) {
-						expenses[i][x]['next'] = moment(expenses[i][x]['last']).add(expenses[i][x]['interval'], 'days');
-					}
-				}
-			}
+            function init_expenses(expenses) {
+                for (var i = 0; i < expenses.length; ++i) {
+                    for (var x = 0; x < expenses[i].length; ++x) {
+                        expenses[i][x]['next'] = moment(expenses[i][x]['last']).add(expenses[i][x]['interval'], 'days');
+                    }
+                }
+            }
 
-			function generate_output(cursor, balance, cash, stocks, debt) {
-				var net_worth = calculate_net_worth(balance, cash, stocks, debt);
+            function generate_output(cursor, balance, cash, stocks, debt) {
+                var net_worth = calculate_net_worth(balance, cash, stocks, debt);
 
-				return cursor.format('YYYY-MM-DD') + ': ' + 
-						'balance: ' + format_currency(balance) + 
-						' stocks: ' + format_currency(stocks) + 
-						' cash: ' + format_currency(cash) + 
-						' debt: ' + format_currency(debt) + 
-						' net worth: ' + format_currency(net_worth) + '<br>';
-			}
+                return cursor.format('YYYY-MM-DD') + ': ' + 
+                        'balance: ' + format_currency(balance) + 
+                        ' stocks: ' + format_currency(stocks) + 
+                        ' cash: ' + format_currency(cash) + 
+                        ' debt: ' + format_currency(debt) + 
+                        ' net worth: ' + format_currency(net_worth) + '<br>';
+            }
 
-			function calculate_net_worth(balance, cash, stocks, debt) {
-				return balance + cash + stocks - debt;
-			}
+            function calculate_net_worth(balance, cash, stocks, debt) {
+                return balance + cash + stocks - debt;
+            }
 
-			function deduct_debits(cursor, debits, balance) {
-				for (var i = 0; i < debits.length; ++i) {
-					if (cursor.format() === debits[i]['next'].format()) {
-						balance -= debits[i]['amount'];
-						debits[i]['next'].add(debits[i]['interval'], 'days');
-					}
-				}
+            function deduct_debits(cursor, debits, balance) {
+                for (var i = 0; i < debits.length; ++i) {
+                    if (cursor.format() === debits[i]['next'].format()) {
+                        balance -= debits[i]['amount'];
+                        debits[i]['next'].add(debits[i]['interval'], 'days');
+                    }
+                }
 
-				return balance;
-			}
+                return balance;
+            }
 
-			function append_credits(cursor, credits, balance) {
-				for (var i = 0; i < credits.length; ++i) {
-					if (cursor.format() === credits[i]['next'].format()) {
-						balance += credits[i]['amount'];
-						credits[i]['next'].add(credits[i]['interval'], 'days');
-					}
-				}
+            function append_credits(cursor, credits, balance) {
+                for (var i = 0; i < credits.length; ++i) {
+                    if (cursor.format() === credits[i]['next'].format()) {
+                        balance += credits[i]['amount'];
+                        credits[i]['next'].add(credits[i]['interval'], 'days');
+                    }
+                }
 
-				return balance;
-			}
+                return balance;
+            }
 
-			function appreciate_stocks(stocks, stock_return_rate) {
-				return stocks * (1 + (stock_return_rate / 365));
-			}
+            function appreciate_stocks(stocks, stock_return_rate) {
+                return stocks * (1 + (stock_return_rate / 365));
+            }
 
-			function run_calculations(credits, debits, balance, cash, debt, stocks, stock_return_rate) {
-				var html = '';
+            function run_calculations(credits, debits, balance, cash, debt, stocks, stock_return_rate) {
+                var html = '';
 
-				var cursor = moment().startOf('day');
-				var end = moment(cursor).add(1, 'years');
+                var cursor = moment().startOf('day');
+                var end = moment(cursor).add(1, 'years');
 
-				while (cursor.isBefore(end)) {
-					balance = append_credits(cursor, credits, balance);
-					balance = deduct_debits(cursor, debits, balance);
+                while (cursor.isBefore(end)) {
+                    balance = append_credits(cursor, credits, balance);
+                    balance = deduct_debits(cursor, debits, balance);
 
-					stocks = appreciate_stocks(stocks, stock_return_rate);
+                    stocks = appreciate_stocks(stocks, stock_return_rate);
 
-					html += generate_output(cursor, balance, cash, stocks, debt);
+                    html += generate_output(cursor, balance, cash, stocks, debt);
 
-					cursor.add(1, 'days');
-				}
+                    cursor.add(1, 'days');
+                }
 
-				return html;
-			}
+                return html;
+            }
 
-			var balance = 993.72;
-			var cash = 0;
-			//var stocks = 11796.23;
-			var stocks = 0;
-			var debt = 1519.00;
+            var balance = 993.72;
+            var cash = 0;
+            //var stocks = 11796.23;
+            var stocks = 0;
+            var debt = 1519.00;
 
-			var stock_return_rate = 0.07;
+            var stock_return_rate = 0.07;
 
-			var credits = [{
-				name: 'income',
-				amount: 2000,
-				interval: 7,
-				last: moment('2015-05-06')
-			},
-			{
-				name: 'tax return',
-				amount: 2000,
-				interval: 365,
-				last: moment('2015-03-12')
-			},
-			{
-				name: 'bonus',
-				amount: 3000,
-				interval: 365,
-				last: moment('2015-12-25')
-			}];
+            var credits = [{
+                name: 'income',
+                amount: 2000,
+                interval: 7,
+                last: moment('2015-05-06')
+            },
+            {
+                name: 'tax return',
+                amount: 2000,
+                interval: 365,
+                last: moment('2015-03-12')
+            },
+            {
+                name: 'bonus',
+                amount: 3000,
+                interval: 365,
+                last: moment('2015-12-25')
+            }];
 
-			var debits = [{
-				name: 'car/maintenace',
-				amount: 520,
-				interval: 30,
-				last: moment('2015-05-10')
-			},
-			{
-				name: 'electric',
-				amount: 100,
-				interval: 30,
-				last: moment('2015-05-14')
-			},
-			{
-				name: 'cable',
-				amount: 60,
-				interval: 30,
-				last: moment('2015-05-20')
-			},
-			{
-				name: 'phone',
-				amount: 220,
-				interval: 30,
-				last: moment('2015-05-27')
-			},
-			{
-				name: 'insurance',
-				amount: 400,
-				interval: 30,
-				last: moment('2015-05-30')
-			},
-			{
-				name: 'food',
-				amount: 20,
-				interval: 1,
-				last: moment().startOf('day')
-			},
-			{
-				name: 'tolls',
-				amount: 25,
-				interval: 14,
-				last: moment('2015-04-22')
-			},
-			{
-				name: 'siriusxm',
-				amount: 262.98,
-				interval: 365,
-				last: moment('2014-08-07')
-			},
-			{
-				name: 'registration',
-				amount: 100,
-				interval: 365,
-				last: moment('2014-08-07')
-			},
-			{
-				name: 'car wash',
-				amount: 20,
-				interval: 30,
-				last: moment('2015-04-11')
-			},
-			{
-				name: 'hair cut',
-				amount: 40,
-				interval: 30,
-				last: moment('2015-05-09')
-			},
-			{
-				name: 'domain',
-				amount: 9,
-				interval: 30,
-				last: moment('2015-05-07')
-			},
-			{
-				name: 'gas',
-				interval: 10,
-				amount: 45,
-				last: moment('2015-05-04')
-			}];
+            var debits = [{
+                name: 'car/maintenace',
+                amount: 520,
+                interval: 30,
+                last: moment('2015-05-10')
+            },
+            {
+                name: 'electric',
+                amount: 100,
+                interval: 30,
+                last: moment('2015-05-14')
+            },
+            {
+                name: 'cable',
+                amount: 60,
+                interval: 30,
+                last: moment('2015-05-20')
+            },
+            {
+                name: 'phone',
+                amount: 220,
+                interval: 30,
+                last: moment('2015-05-27')
+            },
+            {
+                name: 'insurance',
+                amount: 400,
+                interval: 30,
+                last: moment('2015-05-30')
+            },
+            {
+                name: 'food',
+                amount: 20,
+                interval: 1,
+                last: moment().startOf('day')
+            },
+            {
+                name: 'tolls',
+                amount: 25,
+                interval: 14,
+                last: moment('2015-04-22')
+            },
+            {
+                name: 'siriusxm',
+                amount: 262.98,
+                interval: 365,
+                last: moment('2014-08-07')
+            },
+            {
+                name: 'registration',
+                amount: 100,
+                interval: 365,
+                last: moment('2014-08-07')
+            },
+            {
+                name: 'car wash',
+                amount: 20,
+                interval: 30,
+                last: moment('2015-04-11')
+            },
+            {
+                name: 'hair cut',
+                amount: 40,
+                interval: 30,
+                last: moment('2015-05-09')
+            },
+            {
+                name: 'domain',
+                amount: 9,
+                interval: 30,
+                last: moment('2015-05-07')
+            },
+            {
+                name: 'gas',
+                interval: 10,
+                amount: 45,
+                last: moment('2015-05-04')
+            }];
 
-			init_expenses([credits, debits]);
+            init_expenses([credits, debits]);
 
-			var html = run_calculations(credits, debits, balance, cash, debt, stocks, stock_return_rate);
-			
-			$('body').prepend(html);
-		</script>
-	</body>
+            var html = run_calculations(credits, debits, balance, cash, debt, stocks, stock_return_rate);
+            
+            $('body').prepend(html);
+        </script>
+    </body>
 </script>
